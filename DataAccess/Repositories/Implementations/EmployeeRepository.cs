@@ -32,5 +32,17 @@ namespace DataAccess.Repositories.Implementations
                         .Include(e => e.AssignedProjects)
                         .ToList();
         }
+
+        public override Employee Add(Employee entity)
+        {
+            if (entity.PositionId != 0) entity.Position = null;
+            return base.Add(entity);
+        }
+
+        public override Employee Update(Employee entity)
+        {
+            if (entity.PositionId != 0) entity.Position = null;
+            return base.Add(entity);
+        }
     }
 }

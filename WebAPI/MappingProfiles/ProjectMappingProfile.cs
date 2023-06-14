@@ -15,7 +15,8 @@ namespace WebAPI.MappingProfiles
         public ProjectMappingProfile()
         {
             CreateMap<Project, ProjectDTO>();
-            CreateMap<ProjectDTO, Project>();
+            CreateMap<ProjectDTO, Project>()
+                .ForMember(p => p.ProjectManagerId, opt => opt.MapFrom(dto => Convert.ToInt32(dto.ProjectManager.Id)));
         }
     }
 }
