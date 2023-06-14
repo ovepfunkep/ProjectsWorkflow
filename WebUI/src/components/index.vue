@@ -1,8 +1,15 @@
 ﻿<template>
-    <div v-if="loaded" style="position: sticky; top: 85%; height: 50px;">
-        <v-btn size="x-large" color="blue" icon="mdi-plus" @click="addNewItem()"></v-btn>
+    <div class="text-center" style="align-self:start">
+        <v-snackbar v-model="snackbar"
+                    :snackbarTimeout="snackbarTimeout"
+                    @click="snackbar = false"
+                    :color="snackbarColor"
+                    :top="true">
+            {{ snackbarText }}
+        </v-snackbar>
     </div>
     <div class="main">
+        <v-btn style="position: sticky; top: 85%" v-if="loaded" size="x-large" color="blue" icon="mdi-plus" @click="addNewItem()"></v-btn>
         <div v-if="!loaded">
             <v-label style="margin-right:5px; ">Loading..</v-label>
             <v-progress-circular indeterminate></v-progress-circular>
@@ -67,31 +74,32 @@
                                 <v-col cols="12" sm="6">
                                     <v-text-field variant="outlined" v-model="selectedItem.patronymic" label="Patronymic" maxlength="100"></v-text-field>
                                 </v-col>
-                                <v-col cols="12" sm="6">
-                                    <v-combobox variant="outlined" 
-                                                v-model="selectedItem.position" 
-                                                :items="allPositions" 
-                                                label="Position" 
-                                                item-title="name" 
+                                <v-col cols="12" sm="6" class="text-center">
+                                    <v-combobox variant="outlined"
+                                                v-model="selectedItem.position"
+                                                :items="allPositions"
+                                                label="Position"
+                                                item-title="name"
                                                 :rules="[v => v => (v && v.length <= 100) || 'Maximum 100 characters']"
                                                 @change="handlePositionChange"></v-combobox>
+                                    <v-btn variant="text" v-if="selectedItem.position" color="light-gray" @click="changePosition">Update position</v-btn>
                                 </v-col>
                             </v-row>
                         </v-form>
                         <v-form ref="projectForm" v-else-if="isProjectsTable">
                             <v-row>
                                 <v-col cols="12">
-                                    <v-text-field variant="outlined" v-model="selectedItem.name" label="Name" maxlength="100" :rules="[v => !!v || 'Name is required', v => (v && v.length <= 100) || 'Maximum 100 characters']"></v-text-field>
+                                    <v-text-field variant="outlined" v-model="selectedItem.name" label="Name" maxlength="100" :rules="[v => !!v || 'Name is required']"></v-text-field>
                                 </v-col>
                             </v-row>
                             <v-row>
                                 <v-col cols="12">
-                                    <v-text-field variant="outlined" v-model="selectedItem.customerCompany" label="Customer Company" maxlength="100" :rules="[v => !v || (v && v.length <= 100) || 'Maximum 100 characters']"></v-text-field>
+                                    <v-text-field variant="outlined" v-model="selectedItem.customerCompany" label="Customer Company" maxlength="100" :rules="[v => !!v || 'Name is required']"></v-text-field>
                                 </v-col>
                             </v-row>
                             <v-row>
                                 <v-col cols="12">
-                                    <v-text-field variant="outlined" v-model="selectedItem.executorCompany" label="Executor Company" maxlength="100"></v-text-field>
+                                    <v-text-field variant="outlined" v-model="selectedItem.executorCompany" label="Executor Company" maxlength="100" :rules="[v => !!v || 'Name is required']"></v-text-field>
                                 </v-col>
                             </v-row>
                             <v-row>
@@ -109,25 +117,57 @@
                             </v-row>
                             <v-row>
                                 <v-col cols="12">
-                                    <v-select variant="outlined" v-model="selectedItem.projectManager" :items="allEmployees" label="Project Manager" :item-title="getFullName"></v-select>
+                                    <v-autocomplete variant="outlined" 
+                                              v-model="selectedItem.projectManager" 
+                                              :items="allEmployees" 
+                                              label="Project Manager" 
+                                              :item-title="getFullName"
+                                              return-object="true"
+                                              :rules="[v => !!v || 'PM is required']"></v-autocomplete>
                                 </v-col>
                             </v-row>
                             <v-row>
                                 <v-col cols="12">
-                                    <v-select variant="outlined" v-model="selectedItem.employees" :items="allEmployees" label="Assigned employees" :item-title="getFullName" multiple></v-select>
+                                    <v-autocomplete variant="outlined"
+                                                    v-model="selectedItem.employees"
+                                                    :items="allEmployees"
+                                                    label="Assigned employees"
+                                                    :item-title="getFullName"
+                                                    multiple
+                                                    return-object></v-autocomplete>
+
                                 </v-col>
                             </v-row>
                         </v-form>
                     </template>
                 </v-card-text>
                 <v-card-actions style="justify-content: space-between">
-                    <v-btn size="large" variant="flat" color="green" @click="saveEditing">Save</v-btn>
-                    <div v-if="selectedItem?.id">
-                        <v-btn variant="flat" color="red" @click="deleteEditing">Delete</v-btn>
-                    </div>
+                    <v-col cols="12" sm="6">
+                        <v-btn variant="elevated" color="#94ff94" @click="saveEditing">Save</v-btn>
+                    </v-col>
+                    <v-col cols="12" sm="6" class="text-end">
+                        <div v-if="selectedItem?.id">
+                            <v-btn variant="elevated" color="#ff9494" @click="deleteEditing">Delete</v-btn>
+                        </div>
+                    </v-col>
                 </v-card-actions>
             </v-card>
         </v-dialog>
+        <v-dialog v-model="showPositionDialog" max-width="500px">
+            <v-card>
+                <v-card-title>Position</v-card-title>
+                <v-card-text variant="outlined">
+                    <v-form ref="positionForm">
+                        <v-text-field v-model="selectedItem.position.name" label="Position Name"></v-text-field>
+                    </v-form>
+                </v-card-text>
+                <v-card-actions style="justify-content: space-between">
+                    <v-btn variant="elevated" color="blue" text @click="updatePosition">Update</v-btn>
+                    <v-btn variant="elevated" color="#ff3636" text @click="deletePosition">Delete</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
     </div>
 
 </template>
@@ -155,7 +195,12 @@
                 buttonPositionsVariant: 'default',
                 allEmployees: [],
                 allProjects: [],
-                allPositions: []
+                allPositions: [],
+                showPositionDialog: false,
+                snackbar: false,
+                snackbarText: '',
+                snackbarColor: '',
+                snackbarTimeout: 5000
             }
         },
         mounted() {
@@ -176,9 +221,9 @@
         },
         methods: {
             rowClick: function (item, row) {
-                this.selectedItem = JSON.parse(JSON.stringify(row.item.columns));
+                this.selectedItem = JSON.parse(JSON.stringify(row.item.raw));
                 this.showDialog = true;
-                console.log(this.selectedItem)
+                console.log(row)
             },
 
             addNewItem() {
@@ -244,7 +289,9 @@
                         this.loaded = true;
                     })
                     .catch(error => {
-                        console.error('Error loading employees:', error);
+                        this.snackbarText = `Something went wrong on loading positions...\n${error}`;
+                        this.snackbarColor = '#ff3636';
+                        this.snackbar = true;
                         this.loaded = true;
                     });
 
@@ -258,7 +305,9 @@
                         this.loaded = true;
                     })
                     .catch(error => {
-                        console.error('Error loading employees:', error);
+                        this.snackbarText = `Something went wrong on loading employees...\n${error}`;
+                        this.snackbarColor = '#ff3636';
+                        this.snackbar = true;
                         this.loaded = true;
                     });
             },
@@ -306,6 +355,12 @@
                         title: 'Руководитель',
                         align: 'center',
                         key: 'projectManager'
+                    },
+                    {
+                        title: 'Employees',
+                        align: 'center',
+                        key: 'employees',
+                        value: 'employees.length', 
                     }];
 
                 axios.get('https://localhost:7129/api/Employees')
@@ -314,7 +369,9 @@
                         this.loaded = true;
                     })
                     .catch(error => {
-                        console.error('Error loading employees:', error);
+                        this.snackbarText = `Something went wrong on loading employees...\n${error}`;
+                        this.snackbarColor = '#ff3636';
+                        this.snackbar = true;
                         this.loaded = true;
                     });
 
@@ -327,8 +384,22 @@
                         this.loaded = true;
                     })
                     .catch(error => {
-                        console.error('Error loading employees:', error);
+                        this.snackbarText = `Something went wrong on loading projects...\n${error}`;
+                        this.snackbarColor = '#ff3636';
+                        this.snackbar = true;
                         this.loaded = true;
+                    });
+            },
+
+            loadPositions() {
+                this.loaded = false;
+
+                axios.get('https://localhost:7129/api/Positions')
+                    .then(response => {
+                        this.allPositions = response.data;
+                    })
+                    .catch(error => {
+                        console.error('Error loading positions:', error);
                     });
             },
 
@@ -340,8 +411,8 @@
                     if (this.isEmployeesTable) {
                         formRef = this.$refs.employeeForm;
                         endpoint = `https://localhost:7129/api/Employees/`;
-                    } else if (this.projectForm) {
-                        formRef = this.$refs.projectsForm;
+                    } else if (this.isProjectsTable) {
+                        formRef = this.$refs.projectForm;
                         endpoint = `https://localhost:7129/api/Projects/`;
                     }
 
@@ -352,7 +423,9 @@
                         console.log(this.selectedItem)
                         axios.put(endpoint, this.selectedItem)
                             .then(response => {
-                                console.log('Item saved:', response.data);
+                                this.snackbarText = `Item succesfully updated:\n${JSON.stringify(this.selectedItem)}`;
+                                this.snackbarColor = '#36ff4d';
+                                this.snackbar = true;
                                 this.showDialog = false;
                                 this.selectedItem = null;
 
@@ -363,7 +436,9 @@
                                 }
                             })
                             .catch(error => {
-                                console.error('Error saving item:', error);
+                                this.snackbarText = `Something went wrong on updating item...\n${error}`;
+                                this.snackbarColor = '#ff3636';
+                                this.snackbar = true;
                             });
                     }
                 }
@@ -380,7 +455,9 @@
 
                     axios.delete(endpoint)
                         .then(response => {
-                            console.log('Item deleted:', response.data);
+                            this.snackbarText = `Item succesfully deleted:\n${this.selectedItem}`;
+                            this.snackbarColor = '#36ff4d';
+                            this.snackbar = true;
                             this.showDialog = false;
                             this.selectedItem = null;
 
@@ -391,13 +468,16 @@
                             }
                         })
                         .catch(error => {
-                            console.error('Error deleting item:', error);
+                            this.snackbarText = `Something went wrong on deleting item...\n${error}`;
+                            this.snackbarColor = '#ff3636';
+                            this.snackbar = true;
                         });
                 }
             },
 
             getFullName(employee) {
                 console.log(this.selectedItem)
+                console.log(employee)
                 if (employee) {
                     var initials = '';
                     if (employee.surname) {
@@ -422,6 +502,56 @@
                     this.selectedItem.position = newUserPosition;
                 }
             },
+
+            changePosition() {
+                this.showPositionDialog = true;
+            },
+
+            async updatePosition() {
+                if (this.selectedItem.position) {
+
+                    const { valid } = await this.$refs.positionForm.validate();
+
+
+                    if (valid) {
+                        axios.put('https://localhost:7129/api/Positions', this.selectedItem.position)
+                            .then(response => {
+                                console.log('Item saved:', response.data);
+                                this.showPositionDialog = false;
+                                this.loadPositions();
+                                this.selectedItem.position = response.data;
+                                this.snackbarText = 'Position succesfully updated';
+                                this.snackbarColor = '#36ff4d';
+                                this.snackbar = true;
+                            })
+                            .catch(error => {
+                                this.snackbarText = `Something went wrong on updating position...\n${error}`;
+                                this.snackbarColor = '#ff3636';
+                                this.snackbar = true;
+                            });
+                    }
+                }
+            },
+
+            async deletePosition() {
+                if (this.selectedItem.position) {
+                    axios.put(`https://localhost:7129/api/Positions/${this.selectedItem.position.Id}`)
+                        .then(response => {
+                            console.log('Item deleted.');
+                            this.showPositionDialog = false;
+                            this.loadPositions();
+                            this.selectedItem.position = null;
+                            this.snackbarText = 'Position succesfully deleted';
+                            this.snackbarColor = '#36ff4d';
+                            this.snackbar = true;
+                        })
+                        .catch(error => {
+                            this.snackbarText = `Something went wrong on deleting position...\n${error}`;
+                            this.snackbarColor = '#ff3636';
+                            this.snackbar = true;
+                        });
+                }
+            }
         }
     }
 </script>

@@ -108,7 +108,7 @@ namespace WebAPI.Controllers
                         return NotFound();
                     }
 
-                    return NoContent();
+                    return Ok(updatedProject);
                 }
                 else
                 {

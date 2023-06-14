@@ -30,7 +30,7 @@ namespace DataAccess.Repositories.Implementations
             return entity;
         }
 
-        public T Update(T entity)
+        public virtual T Update(T entity)
         {
             var entry = _entities.Update(entity);
             _dbContext.SaveChanges();

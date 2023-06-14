@@ -29,6 +29,7 @@ namespace DataAccess
                         .HasIndex(p => p.Name)
                         .IsUnique();
 
+
             modelBuilder.Entity<ProjectEmployee>()
                 .HasKey(pe => new { pe.ProjectId, pe.EmployeeId });
 

@@ -12,7 +12,5 @@ namespace DataAccess.Repositories.Interfaces
         public new Project? GetById(int projectId);
 
         public new IEnumerable<Project> GetAll();
-        bool RemoveEmployees(Project project, IEnumerable<Employee> employees);
-        IEnumerable<ProjectEmployee> AddEmployees(Project project, IEnumerable<Employee> employees);
     }
 }

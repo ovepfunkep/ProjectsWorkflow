@@ -40,30 +40,13 @@ namespace DataAccess.Repositories.Implementations
                         .ToList();
         }
 
-        public IEnumerable<ProjectEmployee> AddEmployees(Project project, IEnumerable<Employee> employees)
+        public override Project Update(Project project)
         {
-            List<ProjectEmployee> result = new();
-            var dbProject = _dbContext.Projects.Find(project.Id) ?? _dbContext.Projects.Local.FirstOrDefault(p => p.Id == project.Id, null);
-            foreach (Employee employee in employees)
-            {
-                var dbEmployee = _dbContext.Employees.Find(employee.Id) ?? _dbContext.Employees.Local.FirstOrDefault(e => e?.Id == employee.Id, null);
-                if (dbEmployee == null) continue;
-                result.Add(_dbContext.ProjectsEmployees.Add(new ProjectEmployee() { ProjectId = dbProject.Id, EmployeeId = dbEmployee.Id }).Entity);
-            }
+            var newProject = base.Update(project);
+            newProject.ProjectEmployees = project.ProjectEmployees;
             _dbContext.SaveChanges();
-            return result;
+            return newProject;
         }
 
-
-        public bool RemoveEmployees(Project project, IEnumerable<Employee> employees)
-        {
-            foreach (Employee employee in employees)
-            {
-                _dbContext.Employees.Attach(employee);
-                _dbContext.ProjectsEmployees.Remove(new ProjectEmployee() { Project = project, Employee = employee});
-            }
-            int affectedRows = _dbContext.SaveChanges();
-            return affectedRows > 0;
-        }
     }
 }
