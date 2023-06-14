@@ -29,8 +29,11 @@ namespace DataAccess
                         .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Position>()
-                        .HasIndex(p => p.Name)
-                        .IsUnique();
+                .HasMany(p => p.Employees)
+                .WithOne(e => e.Position)
+                .HasForeignKey(e => e.PositionId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Project>()
                         .HasIndex(p => p.Name)

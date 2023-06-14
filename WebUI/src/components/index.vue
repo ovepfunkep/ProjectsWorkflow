@@ -42,14 +42,13 @@
                           class="elevation-6">
                 <template v-slot:bottom>
                     <div class="text-center pt-2">
-                        <v-pagination v-model="page"
-                                      :length="pageCount"></v-pagination>
+                        <v-pagination v-model="page" :length="pageCount"></v-pagination>
                     </div>
                 </template>
-                <template v-slot:item.projectManager="{ item }">
+                <template v-slot:item.projectManager="{item}">
                     {{ getFullName(item.columns.projectManager) }}
                 </template>
-                <template v-slot:item.position="{ item }">
+                <template v-slot:item.position="{item}">
                     {{ item.columns.position?.name }}
                 </template>
             </v-data-table>
@@ -459,7 +458,7 @@
                     if (valid) {
                         this.selectedItem = this.excludeNullOrEmptyProperties(this.selectedItem);
                         dbRequest(endpoint, this.selectedItem)
-                            .then(response => {
+                            .then(() => {
                                 this.snackbarText = `Item succesfully updated:\n${JSON.stringify(this.selectedItem)}`;
                                 this.snackbarColor = 'blue';
                                 this.snackbar = true;
@@ -492,7 +491,7 @@
                     }
 
                     axios.delete(endpoint)
-                        .then(response => {
+                        .then(() => {
                             this.snackbarText = `Item succesfully deleted:\n${this.selectedItem}`;
                             this.snackbarColor = 'blue';
                             this.snackbar = true;
@@ -571,7 +570,7 @@
             async deletePosition() {
                 if (this.selectedItem.position) {
                     axios.delete(`https://localhost:7129/api/Positions/${this.selectedItem.position.id}`)
-                        .then(response => {
+                        .then(() => {
                             this.selectedItem.id = 0;
                             this.showPositionDialog = false;
                             this.loadPositions();
