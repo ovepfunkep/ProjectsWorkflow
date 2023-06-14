@@ -37,7 +37,7 @@ namespace DataAccess.Repositories.Implementations
             return entry.Entity;
         }
 
-        public bool Delete(int id)
+        public virtual bool Delete(int id)
         {
             var entity = _entities.Find(id);
             if (entity == null)

@@ -12,10 +12,10 @@ namespace DataAccess.Models
         public string? Surname { get; set; }
         public string Name { get; set; } = null!;
         public string? Patronymic { get; set; }
-        public int PositionId { get; set; }
 
+        public int? PositionId { get; set; }
         public Position? Position { get; set; }
         public IEnumerable<Project> ManagedProjects { get; set; } = new List<Project>();
-        public IEnumerable<ProjectEmployee> AssignedProjects { get; set; } = new List<ProjectEmployee>();
+        public IEnumerable<Project> AssignedProjects { get; set; } = new List<Project>();
     }
 }

@@ -21,6 +21,13 @@ namespace DataAccess
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Employee>()
+                        .HasMany(e => e.ManagedProjects)
+                        .WithOne(p => p.ProjectManager)
+                        .HasForeignKey(p => p.ProjectManagerId)
+                        .IsRequired(false)
+                        .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<Position>()
                         .HasIndex(p => p.Name)
                         .IsUnique();
@@ -29,19 +36,13 @@ namespace DataAccess
                         .HasIndex(p => p.Name)
                         .IsUnique();
 
-
-            modelBuilder.Entity<ProjectEmployee>()
-                .HasKey(pe => new { pe.ProjectId, pe.EmployeeId });
-
-            modelBuilder.Entity<ProjectEmployee>()
-                .HasOne(pe => pe.Project)
-                .WithMany(p => p.ProjectEmployees)
-                .HasForeignKey(pe => pe.ProjectId);
-
-            modelBuilder.Entity<ProjectEmployee>()
-                .HasOne(pe => pe.Employee)
-                .WithMany(e => e.AssignedProjects)
-                .HasForeignKey(pe => pe.EmployeeId);
+            modelBuilder.Entity<Project>().HasMany(x => x.Employees)
+                .WithMany(x => x.AssignedProjects)
+                .UsingEntity<ProjectEmployee>(
+                    x => x.HasOne(x => x.Employee)
+                    .WithMany().HasForeignKey(x => x.EmployeeId),
+                    x => x.HasOne(x => x.Project)
+                   .WithMany().HasForeignKey(x => x.ProjectId));
         }
 
 

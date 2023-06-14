@@ -11,5 +11,17 @@ namespace BusinessLogic.Services.Implementations
         public ProjectService(IProjectRepository projectRepository,IEmployeeRepository employeeRepository, IMapper mapper) : base(projectRepository, mapper)
         {
         }
+
+        public override ProjectDTO Add(ProjectDTO dto)
+        {
+            dto.Employees = dto.Employees.Where(emp => emp.Id != dto.ProjectManager?.Id);
+            return base.Add(dto);
+        }
+
+        public override ProjectDTO Update(ProjectDTO dto)
+        {
+            dto.Employees = dto.Employees.Where(emp => emp.Id != dto.ProjectManager?.Id);
+            return base.Update(dto);
+        }
     }
 }

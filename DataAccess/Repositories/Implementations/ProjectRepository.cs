@@ -23,8 +23,7 @@ namespace DataAccess.Repositories.Implementations
             return _dbContext.Projects
                         .Include(p => p.ProjectManager)
                             .ThenInclude(e => e != null ? e.Position : null)
-                        .Include(p => p.ProjectEmployees)
-                            .ThenInclude(pe => pe.Employee)
+                        .Include(p => p.Employees)
                                 .ThenInclude(e => e != null ? e.Position : null)
                         .SingleOrDefault(p => p.Id == projectId);
         }
@@ -34,19 +33,9 @@ namespace DataAccess.Repositories.Implementations
             return _dbContext.Projects
                         .Include(p => p.ProjectManager)
                             .ThenInclude(e => e != null ? e.Position : null)
-                        .Include(p => p.ProjectEmployees)
-                            .ThenInclude(pe => pe.Employee)
+                        .Include(p => p.Employees)
                                 .ThenInclude(e => e != null ? e.Position : null)
                         .ToList();
         }
-
-        public override Project Update(Project project)
-        {
-            var newProject = base.Update(project);
-            newProject.ProjectEmployees = project.ProjectEmployees;
-            _dbContext.SaveChanges();
-            return newProject;
-        }
-
     }
 }

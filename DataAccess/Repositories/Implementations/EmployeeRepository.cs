@@ -23,7 +23,6 @@ namespace DataAccess.Repositories.Implementations
             return _dbContext.Employees
                         .Include(e => e.Position)
                         .Include(e => e.AssignedProjects)
-                        .ThenInclude(pe => pe.Project)
                         .SingleOrDefault(e => e != null && e.Id == employeeId);
         }
         public override IEnumerable<Employee> GetAll()
@@ -31,7 +30,6 @@ namespace DataAccess.Repositories.Implementations
             return _dbContext.Employees
                         .Include(e => e.Position)
                         .Include(e => e.AssignedProjects)
-                        .ThenInclude(pe => pe.Project)
                         .ToList();
         }
     }

@@ -3,6 +3,7 @@ using System;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230614074313_Relation2.2")]
+    partial class Relation22
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "7.0.5");
@@ -30,7 +33,7 @@ namespace DataAccess.Migrations
                     b.Property<string>("Patronymic")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("PositionId")
+                    b.Property<int>("PositionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Surname")
@@ -118,7 +121,9 @@ namespace DataAccess.Migrations
                 {
                     b.HasOne("DataAccess.Models.Position", "Position")
                         .WithMany("Employees")
-                        .HasForeignKey("PositionId");
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Position");
                 });
@@ -127,8 +132,7 @@ namespace DataAccess.Migrations
                 {
                     b.HasOne("DataAccess.Models.Employee", "ProjectManager")
                         .WithMany("ManagedProjects")
-                        .HasForeignKey("ProjectManagerId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ProjectManagerId");
 
                     b.Navigation("ProjectManager");
                 });

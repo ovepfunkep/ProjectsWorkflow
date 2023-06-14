@@ -18,6 +18,6 @@ namespace DataAccess.Models
         public int? ProjectManagerId { get; set; }
 
         public Employee? ProjectManager { get; set; }
-        public IEnumerable<ProjectEmployee> ProjectEmployees { get; set; } = new List<ProjectEmployee>();
+        public IEnumerable<Employee> Employees { get; set; } = new List<Employee>();
     }
 }

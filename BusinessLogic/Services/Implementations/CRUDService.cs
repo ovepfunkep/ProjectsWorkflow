@@ -37,7 +37,7 @@ namespace BusinessLogic.Services.Implementations
             return _mapper.Map<TDTO>(entity);
         }
 
-        public TDTO Update(TDTO dto)
+        public virtual TDTO Update(TDTO dto)
         {
             var entity = _mapper.Map<T>(dto);
             entity = _repository.Update(entity);

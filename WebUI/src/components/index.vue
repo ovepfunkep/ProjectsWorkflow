@@ -56,7 +56,7 @@
         </div>
         <div class="placeForButton" style="height:50px"></div>
 
-        <v-dialog v-model="showDialog" max-width="500px">
+        <v-dialog v-model="showEditingDialog" max-width="500px">
             <v-card>
                 <v-card-title>Edit Item</v-card-title>
                 <v-card-text>
@@ -80,7 +80,8 @@
                                                 :items="allPositions"
                                                 label="Position"
                                                 item-title="name"
-                                                :rules="[v => v => (v && v.length <= 100) || 'Maximum 100 characters']"
+                                                maxlength="100"
+                                                :rules="[v => !!v || 'Position must be assigned']"
                                                 @change="handlePositionChange"></v-combobox>
                                     <v-btn variant="text" v-if="selectedItem.position" color="light-gray" @click="changePosition">Update position</v-btn>
                                 </v-col>
@@ -117,20 +118,19 @@
                             </v-row>
                             <v-row>
                                 <v-col cols="12">
-                                    <v-autocomplete variant="outlined" 
-                                              v-model="selectedItem.projectManager" 
-                                              :items="allEmployees" 
-                                              label="Project Manager" 
-                                              :item-title="getFullName"
-                                              return-object="true"
-                                              :rules="[v => !!v || 'PM is required']"></v-autocomplete>
+                                    <v-autocomplete variant="outlined"
+                                                    v-model="selectedItem.projectManager"
+                                                    :items="allEmployees"
+                                                    label="Project Manager"
+                                                    :item-title="getFullName"
+                                                    return-object="true"></v-autocomplete>
                                 </v-col>
                             </v-row>
                             <v-row>
                                 <v-col cols="12">
                                     <v-autocomplete variant="outlined"
                                                     v-model="selectedItem.employees"
-                                                    :items="allEmployees"
+                                                    :items="filteredEmployees"
                                                     label="Assigned employees"
                                                     :item-title="getFullName"
                                                     multiple
@@ -158,7 +158,7 @@
                 <v-card-title>Position</v-card-title>
                 <v-card-text variant="outlined">
                     <v-form ref="positionForm">
-                        <v-text-field v-model="selectedItem.position.name" label="Position Name"></v-text-field>
+                        <v-text-field v-model="selectedItemPositionName" label="Position Name" maxlength="100" :rules="[p => !!p  || 'Position required']"></v-text-field>
                     </v-form>
                 </v-card-text>
                 <v-card-actions style="justify-content: space-between">
@@ -167,7 +167,15 @@
                 </v-card-actions>
             </v-card>
         </v-dialog>
-
+        <v-dialog v-model="showDialogClose" max-width="400px">
+            <v-card>
+                <v-card-text>Are you sure you want to close? Any unsaved changes will be lost.</v-card-text>
+                <v-card-actions style="justify-content: space-between">
+                    <v-btn color="blue" text @click="openEditingAgain">Cancel</v-btn>
+                    <v-btn color="red" text @click="showCloseCheck = false">Close</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
 
 </template>
@@ -184,7 +192,9 @@
             return {
                 loaded: true,
                 selectedItem: null,
-                showDialog: false,
+                showEditingDialog: false,
+                showPositionDialog: false,
+                showCloseCheck: false,
                 search: '',
                 headers: [],
                 page: 1,
@@ -196,7 +206,6 @@
                 allEmployees: [],
                 allProjects: [],
                 allPositions: [],
-                showPositionDialog: false,
                 snackbar: false,
                 snackbarText: '',
                 snackbarColor: '',
@@ -217,13 +226,37 @@
 
             isProjectsTable() {
                 return this.buttonProjectsVariant === 'outlined';
+            },
+
+            selectedItemPositionName: {
+                get() {
+                    return this.selectedItem.position?.name;
+                },
+                set(value) {
+                    this.selectedItem.position.name = value;
+                }
+            },
+
+            showDialogClose: {
+                get() {
+                    return (!this.showEditingDialog && this.showCloseCheck);
+                },
+                set(value) {
+                    this.showCloseCheck = value;
+                    this.showEditingDialog = !value;
+                }
+            },
+
+            filteredEmployees() {
+                return this.allEmployees.filter(employee => employee.id !== this.selectedItem.projectManager?.id);
             }
+
         },
         methods: {
             rowClick: function (item, row) {
                 this.selectedItem = JSON.parse(JSON.stringify(row.item.raw));
-                this.showDialog = true;
-                console.log(row)
+                this.showEditingDialog = true;
+                this.showCloseCheck = true;
             },
 
             addNewItem() {
@@ -250,7 +283,8 @@
                 }
 
                 this.selectedItem = newItem;
-                this.showDialog = true;
+                this.showEditingDialog = true;
+                this.showCloseCheck = true;
             },
 
             loadEmployees() {
@@ -360,7 +394,7 @@
                         title: 'Employees',
                         align: 'center',
                         key: 'employees',
-                        value: 'employees.length', 
+                        value: 'employees.length',
                     }];
 
                 axios.get('https://localhost:7129/api/Employees')
@@ -399,7 +433,9 @@
                         this.allPositions = response.data;
                     })
                     .catch(error => {
-                        console.error('Error loading positions:', error);
+                        this.snackbarText = `Something went wrong on loading positions...\n${error}`;
+                        this.snackbarColor = '#ff3636';
+                        this.snackbar = true;
                     });
             },
 
@@ -415,18 +451,20 @@
                         formRef = this.$refs.projectForm;
                         endpoint = `https://localhost:7129/api/Projects/`;
                     }
-
                     const { valid } = await formRef.validate();
+                    var dbRequest = axios.post;
+                    if (this.selectedItem.id ?? 0 > 0) dbRequest = axios.put;
 
-
+                    console.log(dbRequest)
                     if (valid) {
-                        console.log(this.selectedItem)
-                        axios.put(endpoint, this.selectedItem)
+                        this.selectedItem = this.excludeNullOrEmptyProperties(this.selectedItem);
+                        dbRequest(endpoint, this.selectedItem)
                             .then(response => {
                                 this.snackbarText = `Item succesfully updated:\n${JSON.stringify(this.selectedItem)}`;
-                                this.snackbarColor = '#36ff4d';
+                                this.snackbarColor = 'blue';
                                 this.snackbar = true;
-                                this.showDialog = false;
+                                this.showEditingDialog = false;
+                                this.showCloseCheck = false;
                                 this.selectedItem = null;
 
                                 if (this.isEmployeesTable) {
@@ -456,9 +494,10 @@
                     axios.delete(endpoint)
                         .then(response => {
                             this.snackbarText = `Item succesfully deleted:\n${this.selectedItem}`;
-                            this.snackbarColor = '#36ff4d';
+                            this.snackbarColor = 'blue';
                             this.snackbar = true;
-                            this.showDialog = false;
+                            this.showEditingDialog = false;
+                            this.showCloseCheck = false;
                             this.selectedItem = null;
 
                             if (this.isEmployeesTable) {
@@ -476,8 +515,6 @@
             },
 
             getFullName(employee) {
-                console.log(this.selectedItem)
-                console.log(employee)
                 if (employee) {
                     var initials = '';
                     if (employee.surname) {
@@ -512,16 +549,14 @@
 
                     const { valid } = await this.$refs.positionForm.validate();
 
-
                     if (valid) {
                         axios.put('https://localhost:7129/api/Positions', this.selectedItem.position)
                             .then(response => {
-                                console.log('Item saved:', response.data);
                                 this.showPositionDialog = false;
                                 this.loadPositions();
                                 this.selectedItem.position = response.data;
                                 this.snackbarText = 'Position succesfully updated';
-                                this.snackbarColor = '#36ff4d';
+                                this.snackbarColor = 'blue';
                                 this.snackbar = true;
                             })
                             .catch(error => {
@@ -535,14 +570,14 @@
 
             async deletePosition() {
                 if (this.selectedItem.position) {
-                    axios.put(`https://localhost:7129/api/Positions/${this.selectedItem.position.Id}`)
+                    axios.delete(`https://localhost:7129/api/Positions/${this.selectedItem.position.id}`)
                         .then(response => {
-                            console.log('Item deleted.');
+                            this.selectedItem.id = 0;
                             this.showPositionDialog = false;
                             this.loadPositions();
                             this.selectedItem.position = null;
                             this.snackbarText = 'Position succesfully deleted';
-                            this.snackbarColor = '#36ff4d';
+                            this.snackbarColor = 'blue';
                             this.snackbar = true;
                         })
                         .catch(error => {
@@ -551,6 +586,19 @@
                             this.snackbar = true;
                         });
                 }
+            },
+
+            excludeNullOrEmptyProperties(obj) {
+                return Object.keys(obj).reduce((acc, key) => {
+                    if (obj[key] !== null && obj[key] !== '') {
+                        acc[key] = obj[key];
+                    }
+                    return acc;
+                }, {});
+            },
+
+            openEditingAgain() {
+                this.showEditingDialog = true;
             }
         }
     }
